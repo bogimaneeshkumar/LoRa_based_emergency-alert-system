@@ -22,20 +22,27 @@ void loop() {
   int packetSize = LoRa.parsePacket();
   
   if (packetSize) {
-    // Message received, combine the IDs and send to the center of the city
-    String remoteID = "";
+    // Message received
+    String receivedData = "";
     
     while (LoRa.available()) {
-      remoteID += (char)LoRa.read();
+      receivedData += (char)LoRa.read();
     }
     
-    String combinedData = String(towerID) + "|" + remoteID;
-    
-    // Send combined data to the center of the city via LORA
-    LoRa.beginPacket();
-    LoRa.print(combinedData);
-    LoRa.endPacket();
+    if (receivedData.indexOf("|") == -1) {
+      // Only user ID received, combine with tower ID and forward
+      String combinedData = String(towerID) + "|" + receivedData;
+      
+      // Send combined data to the nearest tower via LORA
+      LoRa.beginPacket();
+      LoRa.print(combinedData);
+      LoRa.endPacket();
+    } else {
+      // Combined tower and user ID received, forward as is
+      // Send data to the next nearest tower or ESP32 in the city center via LORA
+      LoRa.beginPacket();
+      LoRa.print(receivedData);
+      LoRa.endPacket();
+    }
   }
-  
-  
 }
